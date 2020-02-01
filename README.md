@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 Introduction
 =================
 In my masters class "Problemsolving with heuristics" we built a Dash App making it possible to approximate the sine function between 0 and 1 with polynomial functions of power 0 to 6. We implemented several parametrisable algorithms such as grid search, hillclimber, iterated hillclimber and pattern search (Hooke & Jeeves). The Algorithms can use two optimization functions: Maximum pointwise error and mean squared error. These are calculated of 1000 samples in the range of the approximation. Both the Frontend (Plotly Dash) and the Backend (mainly numpy) are written in Python. The Backend is used for the approximation, the frontend for the visualisation. There is also a modified version of a public stylesheet in the assets folder. 
@@ -12,8 +10,3 @@ See App in Action
 =================
 I deployed the App on AWS. You can have a look at http://sinpol-dev.eu-central-1.elasticbeanstalk.com/
 Might be taken down in the future though. 
-||||||| merged common ancestors
-README
-=======
-*README
->>>>>>> cb73d6aed24aee61e90860d11fa6d87f12be156f
