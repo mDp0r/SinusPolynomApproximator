@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import time
 from itertools import product
+from Equation import Expression
 
 #Herzstück des Backends. Klasse, die die Approximierung auf Basis von Werten bei Istanzierung mit der Methode 
 #algorithmus ausführen durchführt. Gibt die approximierten Funktionsparameter als String, eine Tabelle mit x, sin x,
@@ -10,7 +11,7 @@ from itertools import product
 #und Anzahl der Iterationen als Integer zurück.
 class Approximierer:
     #Initialisierung eines Approximierer Objekts
-    def __init__(self, algorithmus, fehlerfunktion, algo_params_dic, polynomgrad):
+    def __init__(self, algorithmus, fehlerfunktion, algo_params_dic, polynomgrad, min_intervall, max_intervall, math_eq_string):
         #Übergebener Algorithmus wird als Attribut (String) gespeichert
         self.auswahl_algorithmus=algorithmus
         #Übergebene Fehlerfunktion wird als Attribut (String) gespeichert
@@ -19,12 +20,13 @@ class Approximierer:
         self.algo_params=algo_params_dic
         #Aus dem Polynomgrad wird die Anzahl der Parameter der Polynomfunktion berechnet und als Attribut (Int) gespeichert.
         self.anzahl_params=polynomgrad+1
-        #Es wird ein Array mit 1001 x-Werte von 0 bis 1000 erzeugt, die dann auf 0 bis pi/2 runterskaliert werden.
-        #Wird dann als Attribut des Objekts gespeichert.
-        self.x_tabellen=pd.np.array([x for x in range(1001)])
-        self.x_tabellen=(self.x_tabellen/1000)*np.pi/2
-        #Es wird ein Array mit den Sinus Werten für die x-Werte erzeugt. Wird dann als Attribut des Objekts gespeichert.
-        self.sin_y=np.array(np.sin(self.x_tabellen))
+        #Es wird ein Array mit 1001 x-Werte min bis max erzeugt
+        step=(max_intervall-min_intervall)/1000
+        self.x_tabellen=np.array([x for x in np.arange(min_intervall,max_intervall+step,step)])
+        #Aus dem übergebenem String wird ein mathematischer Ausdruck erzeugt
+        math_eq=Expression(math_eq_string,["x"])
+        #Y-Werte für zu approximierende Funktion werden erzeugt
+        self.aprox_y=math_eq(self.x_tabellen)
         #Es wird ein Array erzeugt, der später zur Berechnung der Polynome genutzt wird. Diese gibt die Potenz für alle
         #Teile der Polynomfunktion an. Bsp: Polynomhgrad 3 -> Array [0,1,2,3]. Wird dann als Attribut gespeichert.
         self.power_array=np.array([x for x in range(polynomgrad+1)])
@@ -70,7 +72,7 @@ class Approximierer:
         self.anz_iterationen=dic_output["anz_iterationen"]
         #Tabellarische Ergebnisse für Visualisierung zusammenfassen als DataFrame und als JSON String speichern.
         #Frontend kann keine DataFrames in Browsercache zwischenspeichern. Wird als Attribut gespeichert.
-        self.Tabelle=pd.DataFrame({"x":self.x_tabellen, "sin_y":self.sin_y,"polynom_y":self.y_array, "fehler":self.fehler_array}).to_json(date_format='iso', orient='split')
+        self.Tabelle=pd.DataFrame({"x":self.x_tabellen, "aprox_y":self.aprox_y,"polynom_y":self.y_array, "fehler":self.fehler_array}).to_json(date_format='iso', orient='split')
         return
     #Neu seit V1!!!
     #Führt den Hooke and Jeeves Algorithmus aus. Nimmt Schrittweite aus Benutzereingabe entgegen. Maximale Iterationen
@@ -274,7 +276,7 @@ class Approximierer:
     #durch und gibt die Ergebnisse zurück
     def berechne_fehler(self, input_array):
         #Differenz von Y-Werten und Sinus Y-Werten bilden
-        dif_array=input_array-self.sin_y
+        dif_array=input_array-self.aprox_y
         #Wenn L1 maximaler punktweiser Abstand berechnen, ansonsten mittlerer quadratischer Abstand berechnen.
         if self.auswahl_fehlerfunktion=="L1":
             return self.maximaler_punktweiser_Abstand(dif_array)
@@ -304,11 +306,11 @@ class Approximierer:
         return fehler, index_beste_params, fehler_array
 #Funktion die Extern zur Approximation aufgerufen wird. Ist nicht teil der Klasse Approximierer! Ist aber im selben
 #Modul (Backend) enthalten.
-def approximieren(algorithmus, fehlerfunktion, algo_params_dic,  polynomgrad):
+def approximieren(algorithmus, fehlerfunktion, algo_params_dic,  polynomgrad, min_intervall, max_intervall, math_eq_string):
     #Timetracking starten, jetzigen Zeitpunkt messen
     start_time = time.time()
     #Approximierer instanziieren
-    calc=Approximierer(algorithmus, fehlerfunktion, algo_params_dic, polynomgrad)
+    calc=Approximierer(algorithmus, fehlerfunktion, algo_params_dic, polynomgrad, min_intervall, max_intervall, math_eq_string)
     #Approximation durchführen
     calc.algorithmus_ausführen()
     #Ausführungszeit berechnen, jetzige Zeit minus Startzeit

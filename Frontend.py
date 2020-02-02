@@ -4,7 +4,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash
 import pandas as pd
-import numpy as np
 from dash.dependencies import Input, Output, State
 import Backend
 
@@ -74,7 +73,8 @@ app.layout = html.Div([
             #Vorauswahl des Tabs Rastersuche
             ], id="Algo_Tabs",value="Rastersuche"),
     
-    #HTML Elemente zur Auswahl von Fehlerfunktion und Polynomgrad sowie Button zur Ausführung der Approximation
+    #HTML Elemente zur Auswahl von Fehlerfunktion, Polynomgrad, Zu Approximierende Funktion, Intervall Anfang
+    #und Intervallende sowie Button zur Ausführung der Approximation
     html.Div([
     html.Div([    
     html.Div([
@@ -87,7 +87,19 @@ app.layout = html.Div([
         labelStyle={'display':'inline-block'}, value="L1")]),
     
     html.Div(
-    [html.Label('Polynomgrad'), dcc.Input(id="poly", placeholder='−1 ≤ 𝑛 ≤ 6',value='', type='number', min=-1, max=6, step=1, style={"width":150}, required=True)],
+    [html.Label('Polynomgrad'), dcc.Input(id="poly", placeholder='−1 ≤ 𝑛 ≤ 6',value='', type='number', min=-1, max=6, step=1, style={"width":125}, required=True)],
+    style={ 'display':'inline-block'}),
+    
+    html.Div(
+    [html.Label('Funktion'), dcc.Input(id="func_aprox",value='',type="text", style={"width":125}, required=True)],
+    style={ 'display':'inline-block'}),
+        
+    html.Div(
+    [html.Label('Intervall Anfang'), dcc.Input(id="min_intervall",value='', type="number",style={"width":125}, required=True)],
+    style={ 'display':'inline-block'}),   
+        
+    html.Div(
+    [html.Label('Intervall Ende'), dcc.Input(id="max_intervall",value='',type="number", style={"width":125}, required=True)],
     style={ 'display':'inline-block'}),
     
     html.Div(
@@ -139,14 +151,18 @@ app.layout = html.Div([
      State("IHC_i", "value"),
      State("IHC_step", "value"),
      #####
-     State("HAJ_step","value")
+     State("HAJ_step","value"),
      #####
+     State("func_aprox","value"),
+     State("min_intervall","value"),
+     State("max_intervall","value")
     ]   
 )
 #Funktion, wie die Aktualisierung stattfinden soll. Nimmt die Anzahl der Clicks des Buttons und die Werte in allen
 #Inputfeldern entgegen.
 def callback_func(n_clicks, Algorithmus, polynomgrad, fehlerfunktion,Ras_Min, Ras_Max,
-                  Initialisierung_HC, Schrittweite_HC, Iterationen_IHC, Schrittweite_IHC, Schrittweite_HAJ):
+                  Initialisierung_HC, Schrittweite_HC, Iterationen_IHC, Schrittweite_IHC, Schrittweite_HAJ,
+                 math_eq_string, min_intervall, max_intervall):
     #Wenn der Button geclickt wurde...
     if n_clicks is not None:
         #Rastersuche Parameter setzen, wenn Rastersuche ausgewählt
@@ -171,7 +187,7 @@ def callback_func(n_clicks, Algorithmus, polynomgrad, fehlerfunktion,Ras_Min, Ra
             algo_params={"Schrittweite":Schrittweite_HAJ}
             #####
         #Approximation durchführen
-        return Backend.approximieren(Algorithmus, fehlerfunktion, algo_params, polynomgrad) 
+        return Backend.approximieren(Algorithmus, fehlerfunktion, algo_params, polynomgrad,min_intervall, max_intervall, math_eq_string) 
     else:
         #Falls Button nicht geclickt wurde, kein Update durchführen.
         return (dash.no_update,dash.no_update,dash.no_update,dash.no_update,dash.no_update,dash.no_update)
@@ -216,8 +232,8 @@ def update_Funktionen(Tabelle_json):
         #JSON String in Pandas DataFrame konvertieren
         Tabelle=pd.read_json(Tabelle_json, orient="split")
         #Visualisierung Updaten
-        return {"data":[go.Scatter(x=Tabelle["x"], y=Tabelle["sin_y"], mode='lines', name="Sin", text="Sin"),
-                       go.Scatter(x=Tabelle["x"], y=Tabelle["polynom_y"], mode='lines', name="Polynom+Schnittfläche", text="Polynom",fill="tonexty")]}
+        return {"data":[go.Scatter(x=Tabelle["x"], y=Tabelle["aprox_y"], mode='lines', name="Funktion", text="zu approximierende Funktion"),
+                       go.Scatter(x=Tabelle["x"], y=Tabelle["polynom_y"], mode='lines', name="Polynom", text="Polynom+Schnittfläche",fill="tonexty")]}
     else:
         #Falls noch keine Approximation durchgeführt wurde, kein Update durchführen
         return dash.no_update
